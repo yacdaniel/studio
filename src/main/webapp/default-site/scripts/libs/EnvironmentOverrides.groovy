@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package scripts.libs
 
 import scripts.api.SiteServices;
@@ -6,6 +23,7 @@ import scripts.api.SecurityServices;
 import static org.craftercms.studio.api.v1.util.StudioConfiguration.SECURITY_TYPE;
 
 class EnvironmentOverrides {
+    static SITE_SERVICES_BEAN = "cstudioSiteServiceSimple"
 
 	static getValuesForSite(appContext, request, response) {
 		 
@@ -14,25 +32,27 @@ class EnvironmentOverrides {
 		def cookies = request.getCookies();
 
     	def context = SiteServices.createContext(appContext, request)
-		result.environment = serverProperties["environment"] 
-		result.previewServerUrl = serverProperties["previewUrl"]
-		if(result.previewServerUrl.equals("\${previewUrl}")){
+		result.environment = serverProperties["environment"]
 
-			if(80 == request.serverPort ||  443 == request.serverPort) {
-				result.previewServerUrl=request.scheme+"://"+request.serverName
-			}
-			else {
-				result.previewServerUrl=request.scheme+"://"+request.serverName+":"+request.serverPort
-			}
-		}
-		try {		
+        def contextPath = request.getContextPath()
+        result.authoringServer = request.getRequestURL().toString().replace(request.getPathInfo().toString(), "")
+                .replace(contextPath, "")
+        if (contextPath.startsWith("/")) {
+            contextPath = contextPath.substring(1)
+        }
+        result.studioContext = contextPath
+
+        try {
+            def siteServiceSB = context.applicationContext.get(SITE_SERVICES_BEAN)
+		    result.previewServerUrl = siteServiceSB.getPreviewServerUrl(Cookies.getCookieValue("crafterSite", request))
+
 			result.user = SecurityServices.getCurrentUser(context)
 			result.site = Cookies.getCookieValue("crafterSite", request)
 
             def studioConfigurationSB = context.applicationContext.get("studioConfiguration")
             def authenticationType = studioConfigurationSB.getProperty(SECURITY_TYPE)
             result.authenticationType = authenticationType
-   		
+
    			def language = Cookies.getCookieValue("crafterStudioLanguage", request)
    			if(language == null || language == "" || language == "UNSET") {
    				language = "en"
@@ -69,20 +89,13 @@ class EnvironmentOverrides {
 			     		break;
 			     	}
 			    }
-			}            
-
-//		      result.previewServerUrl = config["preview-server-url"];
-//		      result.authoringServerUrl = config["authoring-server-url"]
-//		      result.formServerUrl = "NOT AVAILABLE"
-//		      result.liveServerUrl = config["live-server-url"]
-//		      result.publishingChannels = config["publishing-channels"]
-//		      result.openSiteDropdown = config["open-site-dropdown"]
+			}
 		  }
 		  catch(err) {
 		     result.err = err
 		     throw new Exception(err)
 		  }
-		  
+
 	      return result;
 	}
 }

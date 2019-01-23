@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Crafter Studio Web-content authoring solution
-  ~ Copyright (C) 2007-2015 Crafter Software Corporation.
+  ~ Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
   ~
   ~ This program is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU General Public License as published by
@@ -50,6 +49,10 @@
 
     <select id="getSites" resultMap="SiteFeedMap">
         SELECT * FROM site WHERE system = 0
+    </select>
+
+    <select id="countSites" resultType="int">
+        SELECT count(1) FROM site WHERE NOT site_id = 'studio_root'
     </select>
 
     <select id="getSite" resultMap="SiteFeedMap" parameterType="java.util.Map">

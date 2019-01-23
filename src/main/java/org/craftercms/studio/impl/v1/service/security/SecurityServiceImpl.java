@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2018 Crafter Software Corporation. All rights reserved.
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,7 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 package org.craftercms.studio.impl.v1.service.security;
@@ -41,6 +40,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.craftercms.commons.entitlements.exception.EntitlementException;
 import org.craftercms.commons.http.RequestContext;
 import org.craftercms.commons.validation.annotations.param.ValidateIntegerParam;
 import org.craftercms.commons.validation.annotations.param.ValidateNoTagsParam;
@@ -122,14 +122,27 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @ValidateParams
     public String authenticate(@ValidateStringParam(name = "username") String username,
-                               @ValidateStringParam(name = "password") String password)
-            throws BadCredentialsException, AuthenticationSystemException {
-        String toRet = securityProvider.authenticate(username, password);
-        if (StringUtils.isNotEmpty(toRet)) {
-            RequestContext requestContext = RequestContext.getCurrent();
-            HttpServletRequest httpServletRequest = requestContext.getRequest();
-            String ipAddress = httpServletRequest.getRemoteAddr();
+                               @ValidateStringParam(name = "password") String password) throws
+        BadCredentialsException, AuthenticationSystemException, EntitlementException {
 
+        String toRet = StringUtils.EMPTY;
+        RequestContext requestContext = RequestContext.getCurrent();
+        HttpServletRequest httpServletRequest = requestContext.getRequest();
+        String ipAddress = httpServletRequest.getRemoteAddr();
+        try {
+            toRet = securityProvider.authenticate(username, password);
+        } catch (BadCredentialsException | AuthenticationSystemException | EntitlementException e) {
+            ActivityService.ActivityType activityType = ActivityService.ActivityType.LOGIN_FAILED;
+            Map<String, String> extraInfo = new HashMap<String, String>();
+            extraInfo.put(DmConstants.KEY_CONTENT_TYPE, StudioConstants.CONTENT_TYPE_USER);
+            activityService.postActivity(getSystemSite(), username, ipAddress, activityType,
+                    ActivityService.ActivitySource.API, extraInfo);
+
+            logger.info("Failed to authenticate user " + username + " logging in from IP: " + ipAddress);
+
+            throw e;
+        }
+        if (StringUtils.isNotEmpty(toRet)) {
             ActivityService.ActivityType activityType = ActivityService.ActivityType.LOGIN;
             Map<String, String> extraInfo = new HashMap<String, String>();
             extraInfo.put(DmConstants.KEY_CONTENT_TYPE, StudioConstants.CONTENT_TYPE_USER);
@@ -137,6 +150,14 @@ public class SecurityServiceImpl implements SecurityService {
                     ActivityService.ActivitySource.API, extraInfo);
 
             logger.info("User " + username + " logged in from IP: " + ipAddress);
+        } else {
+            ActivityService.ActivityType activityType = ActivityService.ActivityType.LOGIN_FAILED;
+            Map<String, String> extraInfo = new HashMap<String, String>();
+            extraInfo.put(DmConstants.KEY_CONTENT_TYPE, StudioConstants.CONTENT_TYPE_USER);
+            activityService.postActivity(getSystemSite(), username, ipAddress, activityType,
+                    ActivityService.ActivitySource.API, extraInfo);
+
+            logger.info("Failed to authenticate user " + username + " logging in from IP: " + ipAddress);
         }
         return toRet;
     }
@@ -623,7 +644,8 @@ public class SecurityServiceImpl implements SecurityService {
                               @ValidateStringParam(name = "password") String password,
                               @ValidateNoTagsParam(name = "firstName") String firstName,
                               @ValidateNoTagsParam(name = "lastName") String lastName,
-                              @ValidateNoTagsParam(name = "email") String email) throws UserAlreadyExistsException {
+                              @ValidateNoTagsParam(name = "email") String email) throws UserAlreadyExistsException,
+        EntitlementException {
         boolean toRet = securityProvider.createUser(username, password, firstName, lastName, email, false);
         if (toRet) {
             ActivityService.ActivityType activityType = ActivityService.ActivityType.CREATED;

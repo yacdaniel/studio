@@ -1,6 +1,5 @@
 /*
- * Crafter Studio Web-content authoring solution
- * Copyright (C) 2007-2017 Crafter Software Corporation.
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +18,7 @@
 package org.craftercms.studio.impl.v1.service.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.craftercms.commons.entitlements.exception.EntitlementException;
 import org.craftercms.commons.http.RequestContext;
 import org.craftercms.studio.api.v1.constant.DmConstants;
 import org.craftercms.studio.api.v1.constant.StudioConstants;
@@ -56,8 +56,8 @@ public class AuthenticationHeadersSecurityProvider extends DbWithLdapExtensionSe
     private final static Logger logger = LoggerFactory.getLogger(AuthenticationHeadersSecurityProvider.class);
 
     @Override
-    public String authenticate(String username, String password)
-            throws BadCredentialsException, AuthenticationSystemException {
+    public String authenticate(String username, String password) throws BadCredentialsException,
+        AuthenticationSystemException, EntitlementException {
         if (isAuthenticationHeadersEnabled()) {
             logger.debug("Authenticating user using authentication headers.");
 

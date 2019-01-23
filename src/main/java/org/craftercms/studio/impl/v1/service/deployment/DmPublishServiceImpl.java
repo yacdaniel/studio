@@ -1,6 +1,5 @@
 /*
- * Crafter Studio Web-content authoring solution
- * Copyright (C) 2007-2016 Crafter Software Corporation.
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -140,7 +139,7 @@ public class DmPublishServiceImpl extends AbstractRegistrableService implements 
     @Override
     @ValidateParams
     public void bulkGoLive(@ValidateStringParam(name = "site") String site, @ValidateStringParam String environment, @ValidateSecurePathParam(name = "path") String path) throws ServiceException {
-        logger.info("Starting Bulk Go Live for path " + path + " site " + site);
+        logger.info("Starting Bulk Publish to '" + environment + "' for path " + path + " site " + site);
 
         String queryPath = path;
         if (queryPath.startsWith(FILE_SEPARATOR + DmConstants.INDEX_FILE)) {
@@ -171,19 +170,19 @@ public class DmPublishServiceImpl extends AbstractRegistrableService implements 
                     }
                 }
                 String aprover = securityService.getCurrentUser();
-                String comment = "Bulk Go Live invoked by " + aprover;
-                logger.info("Deploying package of " + pathsToPublish.size() + " items for site " + site + " path " +
-                             childPath);
+                String comment = "Bulk Publish invoked by " + aprover;
+                logger.info("Deploying package of " + pathsToPublish.size() + " items to '" + environment +
+                                "' for site" + site + " path " + childPath);
                 try {
                     deploymentService.deploy(site, environment, pathsToPublish, launchDate, aprover, comment, true);
                 } catch (DeploymentException e) {
-                    logger.error("Error while running bulk Go Live operation", e);
+                    logger.error("Error while running Bulk Publish operation", e);
                 } finally {
                     logger.debug("Finished processing deployment package for path " + childPath + " site " + site);
                 }
             }
         }
-        logger.info("Finished Bulk Go Live for path " + path + " site " + site);
+        logger.info("Finished Bulk Publish to '" + environment + "' for path " + path + " site " + site);
     }
 
     public void setDeploymentService(DeploymentService deploymentService) {

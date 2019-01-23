@@ -1,6 +1,5 @@
 /*
- * Crafter Studio Web-content authoring solution
- * Copyright (C) 2007-2017 Crafter Software Corporation.
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +18,7 @@
 package org.craftercms.studio.impl.v1.web.security.access;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.craftercms.commons.entitlements.exception.EntitlementException;
 import org.craftercms.commons.http.HttpUtils;
 import org.craftercms.studio.api.v1.exception.security.AuthenticationSystemException;
 import org.craftercms.studio.api.v1.exception.security.BadCredentialsException;
@@ -98,7 +98,7 @@ public class StudioAuthenticationTokenProcessingFilter extends GenericFilterBean
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                    } catch (BadCredentialsException | AuthenticationSystemException e) {
+                    } catch (BadCredentialsException | AuthenticationSystemException | EntitlementException e) {
                         crafterLogger.error("Unable to authenticate user using authentication headers.");
                     }
                 }

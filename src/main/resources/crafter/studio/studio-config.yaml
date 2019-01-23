@@ -13,8 +13,8 @@ studio.config.overrideConfig: crafter/studio/extension/studio-config-override.ya
 ##################################################
 ##              Content Repository              ##
 ##################################################
-# Absolute or relative path to repository base (all actual repositories will be under this)
-studio.repo.basePath: ./data/repos
+# Absolute path to repository base (all actual repositories will be under this)
+studio.repo.basePath: ${sys:crafter.data.dir}/repos
 # Global repository path (automatically goes under repo-base-path)
 studio.repo.globalRepoPath: global
 # Sites repositories base path (automatically goes under repo-base-path)
@@ -40,6 +40,24 @@ studio.repo.rebuildMetadata.batchSize: 100
 studio.repo.sandbox.write.commitMessage: "User {username} wrote content {path}"
 # Published repository commit message
 studio.repo.published.commitMessage: "Publish event triggered by {username} on {datetime} via {source}.\n\nPublish note from user: \"{message}\"\n\nCommit ID: {commit_id}\n\nPackage ID: {package_id}"
+# Create new repository commit message
+studio.repo.createRepository.commitMessage: "Create new repository."
+# Create sandbox branch commit message
+studio.repo.createSandboxBranch.commitMessage: "Create {sandbox} branch."
+# Initial commit message
+studio.repo.initialCommit.commitMessage: "Initial commit."
+# Blueprints updated commit message
+studio.repo.blueprintsUpdated.commitMessage: "Blueprints updated."
+# Create folder commit message
+studio.repo.createFolder.commitMessage: "Created folder site: {site} path: {path}"
+# Delete content commit message
+studio.repo.deleteContent.commitMessage: "Delete file {path}"
+# Move content commit message
+studio.repo.moveContent.commitMessage: "Moving {fromPath} to {toPath}"
+# Copy content commit message
+studio.repo.copyContent.commitMessage: "Copying {fromPath} to {toPath}"
+# The cron expression used on scheduled cleanup of repositories
+studio.repo.cleanup.cron: '0 0 3 ? * SUN'
 
 ############################################################
 ##                   Site Configuration                   ##
@@ -94,10 +112,16 @@ studio.configuration.site.aws.configBasePath: /config/studio/aws
 studio.configuration.site.aws.configFileName: aws.xml
 # Repo path to read the Box configuration
 studio.configuration.site.box.configurationPath: /config/studio/box/box.xml
+# Repo path to read the WebDAV configuration
+studio.configuration.site.webdav.configurationPath: /config/studio/webdav/webdav.xml
 # Regex pattern for item specific dependencies
 studio.configuration.dependency.itemSpecificPatterns: /site/components/page/.*,/static-assets/page/.*,/site/components/item/.*,/static-assets/item/.*
 # Repo path to the asset processing config
 studio.configuration.site.asset.processing.configurationPath: /config/studio/asset-processing/asset-processing-config.xml
+# Default preview URL
+studio.configuration.site.defaultPreviewUrl: ^https?://localhost(:\d*)?/?
+# Default authoring URL
+studio.configuration.site.defaultAuthoringUrl: ^https?://localhost(:\d*)?/studio/?
 
 ########################################################
 ##                   Import Service                   ##
@@ -313,7 +337,7 @@ studio.preview.createTargetUrl: http://localhost:9191/api/1/target/create
 # Default preview create target URL (can be overridden per site)
 studio.preview.deleteTargetUrl: http://localhost:9191/api/1/target/delete/{siteEnv}/{siteName}
 # URL to the preview repository (aka Sandbox) where authors save work-in-progress
-studio.preview.repoUrl: data/repos/sites/{siteName}/sandbox
+studio.preview.repoUrl: ${sys:crafter.data.dir}/repos/sites/{siteName}/sandbox
 # URL to the preview Crafter Engine
 studio.preview.engineUrl: http://localhost:8080
 # Name of template to use with the deployer for preview
@@ -392,16 +416,35 @@ studio.db.validationQuery: SELECT 1
 # Use a value less than or equal to 0 for no timeout.
 studio.db.validationInterval: 34000
 # Base folder for the embedded database
-studio.db.basePath: ./dbms
+studio.db.basePath: ${sys:crafter.bin.dir}/dbms
 # Data folder for the embedded database
-studio.db.dataPath: ./data/db
+studio.db.dataPath: ${sys:crafter.data.dir}/db
 # Port number for the embedded database (note this must match what's in the connection URLs in this config file)
 studio.db.port: 33306
 # Socket path for the embedded database
-studio.db.socket: /tmp/MariaDB4j.33306.sock
+studio.db.socket: ${sys:java.io.tmpdir}/MariaDB4j.33306.sock
 
 ##########################################################
 ##                   Asset Processing                   ##
 ##########################################################
 # The global Tinify API key used for image processing (empty by default)
 studio.configuration.asset.processing.tinify.apiKey:
+
+################################################################
+##                             CORS                           ##
+################################################################
+# This is configured as permissive by default for ease of deployment
+# Remember to tighten this up for production
+
+# Disable CORS headers completely
+studio.cors.disable: false
+# Value for the Access-Control-Allow-Origin header
+studio.cors.origins: '*'
+# Value for the Access-Control-Allow-Headers header
+studio.cors.headers: '*'
+# Value for the Access-Control-Allow-Methods header
+studio.cors.methods: '*'
+# Value for the Access-Control-Allow-Credentials header
+studio.cors.credentials: true
+# Value for the Access-Control-Max-Age header
+studio.cors.maxage: -1

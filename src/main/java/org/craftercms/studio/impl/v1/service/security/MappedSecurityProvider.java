@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2018 Crafter Software Corporation. All rights reserved.
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,11 +13,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 package org.craftercms.studio.impl.v1.service.security;
 
+import org.craftercms.commons.entitlements.exception.EntitlementException;
 import org.craftercms.studio.api.v1.exception.SiteNotFoundException;
 import org.craftercms.studio.api.v1.exception.security.AuthenticationSystemException;
 import org.craftercms.studio.api.v1.exception.security.BadCredentialsException;
@@ -111,8 +111,8 @@ public class MappedSecurityProvider implements SecurityProvider {
         return provider.getUserProfile(user);
     }
 
-    public String authenticate(String username, String password)
-            throws BadCredentialsException, AuthenticationSystemException {
+    public String authenticate(String username, String password) throws BadCredentialsException,
+        AuthenticationSystemException, EntitlementException {
         SecurityProvider provider = lookupProvider(getProviderType());
         return provider.authenticate(username, password);
     }
@@ -185,7 +185,7 @@ public class MappedSecurityProvider implements SecurityProvider {
 
     @Override
     public boolean createUser(String username, String password, String firstName, String lastName, String email,
-                              boolean externallyManaged) throws UserAlreadyExistsException {
+                              boolean externallyManaged) throws UserAlreadyExistsException, EntitlementException {
         SecurityProvider provider = lookupProvider(getProviderType());
         return provider.createUser(username, password, firstName, lastName, email, externallyManaged);
     }

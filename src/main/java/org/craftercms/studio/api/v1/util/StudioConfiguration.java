@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2018 Crafter Software Corporation. All rights reserved.
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,7 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 package org.craftercms.studio.api.v1.util;
@@ -37,6 +36,14 @@ public interface StudioConfiguration {
     String REPO_PUBLISHED_COMMIT_MESSAGE = "studio.repo.published.commitMessage";
     String REPO_PUBLISHED_LIVE = "studio.repo.published.live";
     String REPO_PUBLISHED_STAGING = "studio.repo.published.staging";
+    String REPO_CREATE_REPOSITORY_COMMIT_MESSAGE = "studio.repo.createRepository.commitMessage";
+    String REPO_CREATE_SANDBOX_BRANCH_COMMIT_MESSAGE = "studio.repo.createSandboxBranch.commitMessage";
+    String REPO_INITIAL_COMMIT_COMMIT_MESSAGE = "studio.repo.initialCommit.commitMessage";
+    String REPO_BLUEPRINTS_UPDATED_COMMIT_MESSAGE = "studio.repo.blueprintsUpdated.commitMessage";
+    String REPO_CREATE_FOLDER_COMMIT_MESSAGE = "studio.repo.createFolder.commitMessage";
+    String REPO_DELETE_CONTENT_COMMIT_MESSAGE = "studio.repo.deleteContent.commitMessage";
+    String REPO_MOVE_CONTENT_COMMIT_MESSAGE = "studio.repo.moveContent.commitMessage";
+    String REPO_COPY_CONTENT_COMMIT_MESSAGE = "studio.repo.copyContent.commitMessage";
 
     /** Database */
     String DB_DRIVER = "studio.db.driver";
@@ -91,6 +98,8 @@ public interface StudioConfiguration {
     String CONFIGURATION_SITE_DEPENDENCY_RESOLVER_CONFIG_BASE_PATH =
             "studio.configuration.site.dependencyResolver.configBasePath";
     String CONFIGURATION_DEPENDENCY_ITEM_SPECIFIC_PATTERNS = "studio.configuration.dependency.itemSpecificPatterns";
+    String CONFIGURATION_SITE_DEFAULT_PREVIEW_URL = "studio.configuration.site.defaultPreviewUrl";
+    String CONFIGURATION_SITE_DEFAULT_AUTHORING_URL = "studio.configuration.site.defaultAuthoringUrl";
 
     /** Import Service */
     String IMPORT_ASSIGNEE = "studio.import.assignee";

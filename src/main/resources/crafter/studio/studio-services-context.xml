@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
@@ -43,6 +60,7 @@
         <property name="studioConfiguration" ref="studioConfiguration" />
         <property name="dependencyDiffService" ref="cstudioDependencyDiffService" />
         <property name="contentTypeService" ref="cstudioContentTypeService" />
+        <property name="entitlementValidator" ref="crafter.entitlementValidator"/>
     </bean>
 
     <bean id="studioDependencyService" class="org.craftercms.studio.impl.v1.service.dependency.DependencyServiceImpl">
@@ -92,6 +110,7 @@
         <property name="searchService" ref="searchService" />
         <property name="eventService" ref="studioEventService"/>
         <property name="previewDeployer" ref="previewDeployer"/>
+        <property name="entitlementValidator" ref="crafter.entitlementValidator"/>
     </bean>
 
     <bean id="cstudioImportService" class="org.craftercms.studio.impl.v1.service.content.ImportServiceImpl">
@@ -337,6 +356,11 @@
         <property name="servicesConfig" ref="cstudioServicesConfig" />
     </bean>
 
+    <bean id="studioRepositoryCleanupJob" class="org.craftercms.studio.impl.v1.repository.job.RepositoryCleanupJob">
+        <property name="siteService" ref="cstudioSiteServiceSimple"/>
+        <property name="contentRepository" ref="contentRepository"/>
+    </bean>
+
     <!-- scheduled actions -->
     <bean id="cstudioDeployContentToEnvironmentJobsScheduled" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean" >
         <property name="jobDetail">
@@ -350,10 +374,22 @@
         <property name="startDelay" value="2000" />
     </bean>
 
+    <bean id="studioRepositoryCleanupJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail">
+            <bean class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean" >
+                <property name="targetObject" ref="studioRepositoryCleanupJob"/>
+                <property name="targetMethod" value="cleanupAllRepositories"/>
+                <property name="concurrent" value="false"/>
+            </bean>
+        </property>
+        <property name="cronExpression" value="#{studioConfiguration.getProperty('studio.repo.cleanup.cron')}"/>
+    </bean>
+
     <bean id="studioSchedulerFactoryBean" name="studioSchedulerFactoryBean" class="org.craftercms.studio.impl.v1.util.spring.context.StudioSchedulerFactoryBean" destroy-method="destroy">
         <property name="triggers">
             <list>
                 <ref bean="cstudioDeployContentToEnvironmentJobsScheduled" />
+                <ref bean="studioRepositoryCleanupJobTrigger"/>
             </list>
         </property>
         <property name="waitForJobsToCompleteOnShutdown" value="false" />
@@ -660,7 +696,8 @@
     <!-- ////////////////////////////////////// -->
     <!--         Dependencies                   -->
     <!-- ////////////////////////////////////// -->
-    <bean id="studioDependencyResolver" class="org.craftercms.studio.impl.v1.service.dependency.RegexDependencyResolver">
+    <bean id="studioDependencyResolver"
+          class="org.craftercms.studio.impl.v1.service.dependency.RegexDependencyResolver">
         <property name="contentService" ref="cstudioContentService"/>
         <property name="studioConfiguration" ref="studioConfiguration" />
     </bean>
@@ -705,6 +742,19 @@
         <property name="profileReader" ref="studioBoxProfileReader"/>
     </bean>
 
+    <!-- ////////////////////////////////////// -->
+    <!--                 WEBDAV                 -->
+    <!-- ////////////////////////////////////// -->
+    <bean id="studioWebDavProfileReader" class="org.craftercms.studio.impl.v1.webdav.WebDavProfileReaderImpl">
+        <property name="configPath"
+                  value="#{studioConfiguration.getProperty('studio.configuration.site.webdav.configurationPath')}"/>
+        <property name="contentService" ref="cstudioContentService"/>
+    </bean>
+
+    <bean id="studioWebDavService" class="org.craftercms.studio.impl.v1.service.webdav.WebDavServiceImpl">
+        <property name="profileReader" ref="studioWebDavProfileReader"/>
+    </bean>
+
     <!-- Utilities -->
     <bean id="studioApplicationContextProvider" class="org.craftercms.studio.impl.v1.util.spring.context.ApplicationContextProvider"></bean>
 
@@ -737,7 +787,8 @@
         <property name="scriptsClassPath" value="#{'${crafter-studio}/default-site'.split(',')}"/>
     </bean>
 
-    <bean id="studioConfiguration" class="org.craftercms.studio.impl.v1.util.StudioConfigurationImpl" init-method="init" >
+    <bean id="studioConfiguration" class="org.craftercms.studio.impl.v1.util.StudioConfigurationImpl"
+          init-method="init"  depends-on="cstudioLogProvider">
         <property name="configLocation" value="crafter/studio/studio-config.yaml"/>
     </bean>
 
@@ -775,6 +826,15 @@
         <property name="contentService" ref="cstudioContentService"/>
         <property name="configReader" ref="studioAssetProcessingConfigReader"/>
         <property name="pipelineResolver" ref="studioAssetProcessorPipelineResolver"/>
+    </bean>
+
+    <!-- ////////////////////////////////////// -->
+    <!--              Entitlements              -->
+    <!-- ////////////////////////////////////// -->
+    <bean id="crafter.entitlementsProvider" class="org.craftercms.studio.impl.v1.entitlement.StudioEntitlementUsageProvider">
+        <property name="objectMetadataManager" ref="cstudioObjectMetadataManager"/>
+        <property name="securityProvider" ref="securityProvider"/>
+        <property name="siteService" ref="cstudioSiteServiceSimple"/>
     </bean>
 
     <import resource="classpath:crafter/studio/studio-security-context.xml"/>

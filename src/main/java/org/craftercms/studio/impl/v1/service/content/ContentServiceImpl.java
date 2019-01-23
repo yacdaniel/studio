@@ -1,20 +1,19 @@
-/********************************************************************************
- * Crafter Studio
- *     Copyright (C) 2007-2016 Crafter Software Corporation. All rights reserved.
+/*
+ * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
  *
- *     This program is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     This program is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *     You should have received a copy of the GNU General Public License
- *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *******************************************************************************/
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.craftercms.studio.impl.v1.service.content;
 
 import java.io.IOException;
@@ -34,6 +33,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.craftercms.commons.entitlements.exception.EntitlementException;
+import org.craftercms.commons.entitlements.model.EntitlementType;
+import org.craftercms.commons.entitlements.model.Module;
+import org.craftercms.commons.entitlements.validator.EntitlementValidator;
 import org.craftercms.commons.validation.annotations.param.ValidateIntegerParam;
 import org.craftercms.commons.validation.annotations.param.ValidateParams;
 import org.craftercms.commons.validation.annotations.param.ValidateSecurePathParam;
@@ -111,6 +114,7 @@ import static org.craftercms.studio.api.v1.constant.StudioConstants.CONTENT_TYPE
 import static org.craftercms.studio.api.v1.constant.StudioConstants.CONTENT_TYPE_UNKNOWN;
 import static org.craftercms.studio.api.v1.constant.StudioConstants.FILE_SEPARATOR;
 import static org.craftercms.studio.api.v1.ebus.EBusConstants.EVENT_PREVIEW_SYNC;
+import static org.craftercms.studio.api.v1.service.objectstate.TransitionEvent.REVERT;
 import static org.craftercms.studio.api.v1.service.objectstate.TransitionEvent.SAVE;
 import static org.craftercms.studio.api.v1.service.objectstate.TransitionEvent.SAVE_FOR_PREVIEW;
 
@@ -145,6 +149,7 @@ public class ContentServiceImpl implements ContentService {
     protected StudioConfiguration studioConfiguration;
     protected DependencyDiffService dependencyDiffService;
     protected ContentTypeService contentTypeService;
+    protected EntitlementValidator entitlementValidator;
 
     /**
      * file and folder name patterns for copied files and folders
@@ -246,6 +251,22 @@ public class ContentServiceImpl implements ContentService {
                              @ValidateStringParam(name = "edit") String edit,
                              @ValidateStringParam(name = "unlock") String unlock) throws ServiceException {
         // TODO: SJ: refactor for 2.7.x
+
+        try {
+            long start = 0;
+            if(logger.getLevel().equals(Logger.LEVEL_DEBUG)) {
+                start = System.currentTimeMillis();
+                logger.debug("Starting entitlement validation");
+            }
+            entitlementValidator.validateEntitlement(Module.STUDIO, EntitlementType.ITEM,
+                objectMetadataManager.countAllItems(), 1);
+            if(logger.getLevel().equals(Logger.LEVEL_DEBUG)) {
+                logger.debug("Validation completed, duration : {0} ms", System.currentTimeMillis() - start);
+            }
+        } catch (EntitlementException e) {
+            throw new ServiceException("Unable to complete request due to entitlement limits. Please contact your "
+                + "system administrator.");
+        }
 
         Map<String, String> params = new HashMap<String, String>();
         params.put(DmConstants.KEY_SITE, site);
@@ -422,6 +443,23 @@ public class ContentServiceImpl implements ContentService {
                                                  InputStream in, String isImage, String allowedWidth,
                                                  String allowedHeight, String allowLessSize, String draft,
                                                  String unlock, String systemAsset) throws ServiceException {
+
+        try {
+            long start = 0;
+            if(logger.getLevel().equals(Logger.LEVEL_DEBUG)) {
+                start = System.currentTimeMillis();
+                logger.debug("Starting entitlement validation");
+            }
+            entitlementValidator.validateEntitlement(Module.STUDIO, EntitlementType.ITEM,
+                objectMetadataManager.countAllItems(), 1);
+            if(logger.getLevel().equals(Logger.LEVEL_DEBUG)) {
+                logger.debug("Validation completed, duration : {0} ms", System.currentTimeMillis() - start);
+            }
+        } catch (EntitlementException e) {
+            throw new ServiceException("Unable to complete request due to entitlement limits. Please contact your "
+                + "system administrator.");
+        }
+
         boolean isSystemAsset = Boolean.valueOf(systemAsset);
 
         Map<String, String> params = new HashMap<String, String>();
@@ -1843,6 +1881,7 @@ public class ContentServiceImpl implements ContentService {
                         path + " version: " + version);
             }
             // Update the database with the commitId for the target item
+            objectStateService.transition(site, path, REVERT);
             objectMetadataManager.updateCommitId(site, path, commitId);
             _contentRepository.insertGitLog(site, commitId, 1);
             siteService.updateLastCommitId(site, commitId);
@@ -2565,4 +2604,9 @@ public class ContentServiceImpl implements ContentService {
     public void setContentTypeService(ContentTypeService contentTypeService) {
         this.contentTypeService = contentTypeService;
     }
+
+    public void setEntitlementValidator(final EntitlementValidator entitlementValidator) {
+        this.entitlementValidator = entitlementValidator;
+    }
+
 }
